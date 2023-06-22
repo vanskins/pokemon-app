@@ -1,5 +1,9 @@
-async function getData() {
-  const res = await fetch('https://pokeapi.co/api/v2/pokemon')
+import Navigation from "@/components/Navigation"
+import PokemonCard from "@/components/PokemonCard"
+
+async function getData(offset: number) {
+  "use server"
+  const res = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=10&offset=${offset}`)
   if (!res.ok) {
     throw new Error('Failed to fetch data')
   }
@@ -14,35 +18,21 @@ async function getPokemonData(name: string) {
   return res.json()
 }
 
-export default async function Home() {
-  const data = await getData()
-
+async function onNext(offset: number) {
+  "use server"
+}
+export default async function Home({ searchParams }: { searchParams?: any}) {
+  const offset = searchParams.offset ? searchParams.offset : 0
+  const data = await getData(offset)
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="text-center">
-        <h1 className="text-lg">PokeAPI</h1>
-        <button type="button" className="rounded-md bg-gray-300 p-4 m-2">Previous</button>
-        <label className="p-4">Show 10 results</label>
-        <button type="button" className="rounded-md bg-gray-300 p-4 m-2">Next</button>
-      </div>
-      <div className="grid grid-cols-5 gap-4">
+    <main className="mx-32">
+      <Navigation offset={offset} />
+      <div className="grid gap-4 grid-cols-fluid">
         {
           data && data.results && data.results.map(async (i: any, k: number) => {
             const details = await getPokemonData(i.name)
-
             return (
-              <div className="bg-white flex flex-col items-center" key={k}>
-                <img src={details.sprites.front_default} />
-                <p>{i.name}</p>
-                <div className="flex flex-row">
-                  {details.types.map((t: any, x: number) => {
-                    console.log(t)
-                    return (
-                      <p className="p-2 m-2 bg-gray-300 rounded-full" key={x}>{t.type.name}</p>
-                    )
-                  })}
-                </div>
-              </div>
+              <PokemonCard key={k} details={details} />
             )
           })
         }
